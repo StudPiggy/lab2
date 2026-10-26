@@ -12,9 +12,30 @@
 
 char words[MAX_WORDS][MAX_LEN];
 char result_word[MAX_LEN];
-int value_letters[26] = { 0 };
+int value_letters[26];
 bool taken_nums[10] = { 0 };
 char letters[10];
+
+int letter_weight(char c) {
+    int weight = 0, len;
+    for (int i = 0; i < MAX_WORDS && words[i][0] != '\0'; i++) {
+        len = strlen(words[i]);
+        for (int j = len - 1; j >= 0; j--) {
+            if (words[i][j] == c) {
+                weight += (len - j);
+                break;
+            }
+        }
+    }
+    len = strlen(result_word);
+    for (int j = len - 1; j >= 0; j--) {
+        if (result_word[j] == c) {
+            weight += (len - j);
+            break;
+        }
+    }
+    return weight;
+}
 
 bool solution(int deep, char operators[]) {
     if (letters[deep] == '\0') {
@@ -63,6 +84,7 @@ bool solution(int deep, char operators[]) {
             value_letters[letters[deep] - 'A'] = digit;
             taken_nums[digit] = true;
             if (solution(deep + 1, operators)) return true;
+            value_letters[letters[deep] - 'A'] = -1;
             taken_nums[digit] = false;
         }
     }
@@ -70,13 +92,14 @@ bool solution(int deep, char operators[]) {
 }
 
 int main() {
-    SetConsoleCP(1251);     
-    SetConsoleOutputCP(1251); 
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
     setlocale(LC_ALL, "rus");
     char rebus[256];
     printf("Числовой ребус: ");
     if (!fgets(rebus, sizeof(rebus), stdin)) return 1;
     rebus[strcspn(rebus, "\n")] = 0;
+    for (int i = 0; i < 26; i++) value_letters[i] = -1;
     bool uniq[26] = { 0 };
     bool in_result = false;
     memset(words, 0, sizeof(words));
@@ -88,16 +111,14 @@ int main() {
     while (token != NULL) {
         if (strcmp(token, "=") == 0) in_result = true;
         else if (strcmp(token, "+") == 0 || strcmp(token, "-") == 0 ||
-                 strcmp(token, "*") == 0 || strcmp(token, "/") == 0) {
+            strcmp(token, "*") == 0 || strcmp(token, "/") == 0) {
             operators[opidx++] = token[0];
         }
         else {
             char* wd = in_result ? result_word : words[widx];
             strcpy(wd, token);
             for (int i = 0; wd[i] != '\0'; i++) {
-                if (wd[i] >= 'A' && wd[i] <= 'Z') {
-                    uniq[wd[i] - 'A'] = true;
-                }
+                if (wd[i] >= 'A' && wd[i] <= 'Z') uniq[wd[i] - 'A'] = true;
             }
             if (!in_result) widx++;
         }
@@ -106,6 +127,16 @@ int main() {
     int lidx = 0;
     for (int i = 0; i < 26; i++) {
         if (uniq[i]) letters[lidx++] = (char)('A' + i);
+    }
+    int n = lidx;
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (letter_weight(letters[j]) < letter_weight(letters[j + 1])) {
+                char temp = letters[j];
+                letters[j] = letters[j + 1];
+                letters[j + 1] = temp;
+            }
+        }
     }
     clock_t start = clock();
     if (solution(0, operators)) {
