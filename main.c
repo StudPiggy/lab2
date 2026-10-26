@@ -12,9 +12,46 @@
 
 char words[MAX_WORDS][MAX_LEN];
 char result_word[MAX_LEN];
-int value_letters[26] = { 0 };
+int value_letters[26];
 bool taken_nums[10] = { 0 };
 char letters[10];
+char check_op = true;
+
+bool check() {
+    if (!check_op) return true;
+    int perenos = 0;
+    for (int col = 0; col < MAX_LEN; col++) {
+        long long sum = perenos;
+        bool all_known = true;
+        for (int i = 0; i < MAX_WORDS && words[i][0] != '\0'; i++) {
+            int len = strlen(words[i]);
+            if (col < len) {
+                char c = words[i][len - 1 - col];
+                if (value_letters[c - 'A'] == -1) {
+                    all_known = false;
+                }
+                else {
+                    sum += value_letters[c - 'A'];
+                }
+            }
+        }
+        if (!all_known) break;
+        int r_len = strlen(result_word);
+        if (col < r_len) {
+            char r_c = result_word[r_len - 1 - col];
+            if (value_letters[r_c - 'A'] == -1) {
+                break;
+            }
+            else {
+                if (value_letters[r_c - 'A'] != sum % 10) {
+                    return false;
+                }
+                perenos = sum / 10;
+            }
+        }
+    }
+    return true;
+}
 
 bool solution(int deep, char operators[]) {
     if (letters[deep] == '\0') {
@@ -52,6 +89,9 @@ bool solution(int deep, char operators[]) {
         }
         return fabs(left_part - (double)right_res) < 1e-9;
     }
+    if (!check()) {
+        return false;
+    }
     for (int digit = 0; digit <= 9; digit++) {
         if (!taken_nums[digit]) {
             bool first = false;
@@ -63,6 +103,7 @@ bool solution(int deep, char operators[]) {
             value_letters[letters[deep] - 'A'] = digit;
             taken_nums[digit] = true;
             if (solution(deep + 1, operators)) return true;
+            value_letters[letters[deep] - 'A'] = -1;
             taken_nums[digit] = false;
         }
     }
@@ -70,13 +111,14 @@ bool solution(int deep, char operators[]) {
 }
 
 int main() {
-    SetConsoleCP(1251);     
-    SetConsoleOutputCP(1251); 
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
     setlocale(LC_ALL, "rus");
     char rebus[256];
     printf("Числовой ребус: ");
     if (!fgets(rebus, sizeof(rebus), stdin)) return 1;
     rebus[strcspn(rebus, "\n")] = 0;
+    for (int i = 0; i < 26; i++) value_letters[i] = -1;
     bool uniq[26] = { 0 };
     bool in_result = false;
     memset(words, 0, sizeof(words));
@@ -88,16 +130,15 @@ int main() {
     while (token != NULL) {
         if (strcmp(token, "=") == 0) in_result = true;
         else if (strcmp(token, "+") == 0 || strcmp(token, "-") == 0 ||
-                 strcmp(token, "*") == 0 || strcmp(token, "/") == 0) {
+            strcmp(token, "*") == 0 || strcmp(token, "/") == 0) {
             operators[opidx++] = token[0];
+            if (token[0] == '*' || token[0] == '/') check_op = false;
         }
         else {
             char* wd = in_result ? result_word : words[widx];
             strcpy(wd, token);
             for (int i = 0; wd[i] != '\0'; i++) {
-                if (wd[i] >= 'A' && wd[i] <= 'Z') {
-                    uniq[wd[i] - 'A'] = true;
-                }
+                if (wd[i] >= 'A' && wd[i] <= 'Z') uniq[wd[i] - 'A'] = true;
             }
             if (!in_result) widx++;
         }
