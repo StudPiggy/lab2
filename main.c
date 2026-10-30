@@ -19,6 +19,7 @@ int lengths[MAX_LEN];
 int num_words = 0;
 int result_len = 0;
 int num_letters = 0;
+bool is_leading[26] = { 0 };
 
 bool solution(int deep, char operators[]) {
     if (deep == num_letters) {
@@ -60,12 +61,9 @@ bool solution(int deep, char operators[]) {
     int current = letters[deep] - 'A';
     for (int digit = 0; digit <= 9; digit++) {
         if (!taken_nums[digit]) {
-            bool first = false;
-            for (int i = 0; i < num_words; i++) {
-                if (words[i][0] == letters[deep]) first = true;
+            if (digit == 0 && is_leading[letters[deep] - 'A']) {
+                continue;
             }
-            if (result_word[0] == letters[deep]) first = true;
-            if (digit == 0 && first) continue;
             value_letters[current] = digit;
             taken_nums[digit] = true;
             if (solution(deep + 1, operators)) return true;
@@ -110,6 +108,9 @@ int main() {
             }
             for (int i = 0; wd[i] != '\0'; i++) {
                 if (wd[i] >= 'A' && wd[i] <= 'Z') uniq[wd[i] - 'A'] = true;
+            }
+            if (len > 1) {
+                is_leading[wd[0] - 'A'] = true;
             }
             if (!in_result) widx++;
         }
